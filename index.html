@@ -1,0 +1,56 @@
+<!doctype html>
+
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Padronizador Itaú</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <header class="topbar">
+      <h1>Padronizador de Extratos Itaú</h1>
+      <p>RAW + PIVOT mensal automático</p>
+    </header>
+
+    <section class="uploadBox">
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+
+      <button id="processBtn">
+        Processar Arquivo
+      </button>
+
+      <button id="downloadBtn">
+        Exportar XLSX
+      </button>
+    </section>
+
+    <section class="statusBox">
+      <div id="status">Aguardando arquivo...</div>
+    </section>
+
+    <section class="previewGrid">
+
+      <div class="card">
+        <h2>RAW_EXTRATO</h2>
+        <div id="rawPreview"></div>
+      </div>
+
+      <div class="card">
+        <h2>PIVOT_MENSAL</h2>
+        <div id="pivotPreview"></div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
