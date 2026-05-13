@@ -1,56 +1,63 @@
 <!doctype html>
-
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Padronizador Itaú</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <link rel="stylesheet" href="styles.css">
+  <title>Padronizador de Extratos GT</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-
-  <div class="app">
-
-    <header class="topbar">
-      <h1>Padronizador de Extratos Itaú</h1>
-      <p>RAW + PIVOT mensal automático</p>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <h1>Padronizador de Extratos GT</h1>
+        <p>Converte extrato bruto Itaú em RAW_EXTRATO + PIVOT_MENSAL</p>
+      </div>
+      <span class="badge">v2</span>
     </header>
 
-    <section class="uploadBox">
-      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
-
-      <button id="processBtn">
-        Processar Arquivo
-      </button>
-
-      <button id="downloadBtn">
-        Exportar XLSX
-      </button>
-    </section>
-
-    <section class="statusBox">
-      <div id="status">Aguardando arquivo...</div>
-    </section>
-
-    <section class="previewGrid">
-
-      <div class="card">
-        <h2>RAW_EXTRATO</h2>
-        <div id="rawPreview"></div>
+    <section class="card">
+      <div class="dropzone" id="dropzone">
+        <h2>Arraste o arquivo aqui ou selecione abaixo</h2>
+        <p>Arquivos aceitos: .xlsx, .xls, .csv</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        <div class="actions">
+          <button id="processBtn" type="button">Processar arquivo</button>
+          <button id="downloadBtn" type="button" disabled>Exportar XLSX padronizado</button>
+        </div>
+        <div class="fileName" id="fileName">Nenhum arquivo selecionado</div>
       </div>
-
-      <div class="card">
-        <h2>PIVOT_MENSAL</h2>
-        <div id="pivotPreview"></div>
-      </div>
-
     </section>
 
-  </div>
+    <section class="statusCard">
+      <strong>Status:</strong> <span id="status">Aguardando arquivo...</span>
+    </section>
 
-  <script src="app.js"></script>
+    <section class="kpis">
+      <div class="kpi"><span>Linhas RAW</span><strong id="rawCount">0</strong></div>
+      <div class="kpi"><span>Denominações</span><strong id="denomCount">0</strong></div>
+      <div class="kpi"><span>Meses</span><strong id="monthCount">0</strong></div>
+      <div class="kpi"><span>Total</span><strong id="totalValue">R$ 0,00</strong></div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="cardHead"><h2>RAW_EXTRATO</h2><span>preview</span></div>
+        <div class="tableWrap" id="rawPreview"></div>
+      </div>
+      <div class="card">
+        <div class="cardHead"><h2>PIVOT_MENSAL</h2><span>preview</span></div>
+        <div class="tableWrap" id="pivotPreview"></div>
+      </div>
+    </section>
+
+    <section class="card help">
+      <h2>Formato gerado</h2>
+      <p><strong>RAW_EXTRATO:</strong> Data, Denominação, Valor, Mes</p>
+      <p><strong>PIVOT_MENSAL:</strong> Denominação + meses em colunas YYYY-MM</p>
+    </section>
+  </main>
+  <script src="./app.js"></script>
 </body>
 </html>
