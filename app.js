@@ -1,3 +1,5 @@
+/* CÓDIGO AJUSTADO 14052026  */
+
 const $ = (id) => document.getElementById(id);
 
 let RAW_DATA = [];
@@ -7,6 +9,8 @@ let SELECTED_FILE = null;
 
 const fileInput = $("fileInput");
 const dropzone = $("dropzone");
+
+/* ESCOLHA DO ARQUIVO A SER PADRONIZADO */
 
 fileInput.addEventListener("change", () => {
   SELECTED_FILE = fileInput.files[0] || null;
@@ -37,6 +41,8 @@ dropzone.addEventListener("drop", e => {
   fileInput.files = e.dataTransfer.files;
   $("fileName").textContent = file.name;
 });
+
+/* --------- >  PROCESSAMENTO DO ARQUIVO  */
 
 async function processFile(){
   try{
@@ -123,122 +129,124 @@ function parseCsv(text){
   return rows;
 }
 
+/* -----> FUNÇÃO PARSE ATUALIZADA   */
+
 function parseItauRows(rows){
+
   const headerInfo = findHeaderRow(rows);
 
   if(!headerInfo){
-    const preview = rows.slice(0,8).map(r => r.join(" | ")).join(" / ");
-    throw new Error("Não encontrei cabeçalho com Data, Lançamento/Descrição e Valor. Primeiras linhas: " + preview.slice(0,250));
+    throw new Error(
+      "Não encontrei cabeçalho válido."
+    );
   }
 
   const { headerIndex, map } = headerInfo;
+
   const raw = [];
 
   for(let i = headerIndex + 1; i < rows.length; i++){
-    const r = rows[i];
-    const data = parseDate(getCell(r, map.data));
-    const descricao = normalizeDescription(getCell(r, map.descricao));
-    const valor = Math.abs(parseValue(getCell(r, map.valor)));
 
-    if(!data || !descricao || !valor) continue;
+    const r = rows[i];
+
+    const dataRaw = getCell(r, map.data);
+    const descRaw = getCell(r, map.descricao);
+    const valorRaw = getCell(r, map.valor);
+
+    const data = parseDate(dataRaw);
+
+    let descricao = normalizeDescription(descRaw);
+
+    const valor = parseValue(valorRaw);
+
+    // ignora linhas sem data
+    if(!data) continue;
+
+    // ignora linhas sem descrição
+    if(!descricao) continue;
+
+    // ignora saldo
+    if(
+      descricao.includes("SALDO") ||
+      descricao.includes("TOTAL DISPON")
+    ){
+      continue;
+    }
+
+    // ignora linhas sem valor numérico
+    if(
+      valor === null ||
+      valor === undefined ||
+      isNaN(valor)
+    ){
+      continue;
+    }
 
     raw.push({
       Data: formatDateBR(data),
       "Denominação": descricao,
-      Valor: round2(valor),
+      Valor: round2(Math.abs(valor)),
       Mes: toYM(data)
     });
   }
 
   const pivot = buildPivot(raw);
+
   const months = getMonths(raw);
 
-  return { raw, pivot, months };
+  return {
+    raw,
+    pivot,
+    months
+  };
 }
 
-function findHeaderRow(rows){
-  for(let i=0; i<Math.min(rows.length, 120); i++){
-    const row = rows[i].map(normalizeHeader);
-
-    const dataIdx = findIndex(row, ["data", "dt", "movimento"]);
-    const descIdx = findIndex(row, ["lancamento", "descricao", "historico"]);
-    const valorIdx = findIndex(row, ["valor", "debito", "credito", "vlr"]);
-
-    if(dataIdx >= 0 && descIdx >= 0 && valorIdx >= 0){
-      return { headerIndex:i, map:{ data:dataIdx, descricao:descIdx, valor:valorIdx } };
-    }
-  }
-  return null;
-}
-
-function findIndex(row, candidates){
-  return row.findIndex(h => candidates.some(c => h.includes(normalizeHeader(c))));
-}
-
-function normalizeHeader(v){
-  return String(v ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9]/g,"");
-}
-
-function norm(v){
-  return String(v ?? "").replace(/\u00A0/g, " ").trim();
-}
-
-function getCell(row, idx){
-  return idx >= 0 ? row[idx] : "";
-}
-
-function parseDate(v){
-  if(!v) return null;
-  if(v instanceof Date && !isNaN(v)) return v;
-
-  const s = norm(v);
-
-  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if(m){
-    let y = Number(m[3]);
-    if(y < 100) y += 2000;
-    return new Date(y, Number(m[2])-1, Number(m[1]));
-  }
-
-  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
-
-  const d = new Date(s);
-  if(!isNaN(d)) return d;
-  return null;
-}
+/* -----------> FUNÇÃO PARSE VALUES     */
 
 function parseValue(v){
-  if(typeof v === "number") return v;
 
-  let s = norm(v);
-  if(!s || s === "-" || s === "—") return 0;
+  if(
+    v === null ||
+    v === undefined ||
+    v === ""
+  ){
+    return null;
+  }
+
+  // número nativo excel
+  if(typeof v === "number"){
+
+    if(isNaN(v)) return null;
+
+    return v;
+  }
+
+  let s = String(v)
+    .trim()
+    .replace(/R\\$/g,"")
+    .replace(/\\s/g,"");
+
+  if(!s) return null;
 
   let negative = false;
 
-  if(/^\(.*\)$/.test(s)){
+  if(s.includes("-")){
     negative = true;
-    s = s.slice(1,-1);
   }
-  if(s.includes("-")) negative = true;
 
   s = s
-    .replace(/R\$/g,"")
-    .replace(/\s/g,"")
-    .replace(/[^\d,.-]/g,"");
+    .replace(/\\./g,"")
+    .replace(",",".")
+    .replace(/-/g,"");
 
-  if(s.includes(",") && s.includes(".")) s = s.replace(/\./g,"").replace(",",".");
-  else if(s.includes(",") && !s.includes(".")) s = s.replace(",",".");
-
-  s = s.replace(/-/g,"");
   const n = Number(s);
-  if(!Number.isFinite(n)) return 0;
+
+  if(isNaN(n)) return null;
+
   return negative ? -n : n;
 }
+
+/* --------> FUNÇÃO DE NORMATIUZAÇÃO DA DESCRIÇÃO     */
 
 function normalizeDescription(v){
   return norm(v).replace(/\s+/g," ").trim().toUpperCase();
