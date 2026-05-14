@@ -129,6 +129,66 @@ function parseCsv(text){
   return rows;
 }
 
+/* ----> Ajuste sugerid05h56 14052026 -------- */
+
+function findHeaderRow(rows){
+  for(let i = 0; i < Math.min(rows.length, 120); i++){
+
+    const row = rows[i].map(normalizeHeader);
+
+    const dataIdx = findIndex(row, [
+      "data",
+      "dt",
+      "movimento"
+    ]);
+
+    const descIdx = findIndex(row, [
+      "lancamento",
+      "lançamento",
+      "descricao",
+      "descrição",
+      "historico",
+      "histórico"
+    ]);
+
+    const valorIdx = findIndex(row, [
+      "valor",
+      "debito",
+      "débito",
+      "credito",
+      "crédito",
+      "vlr"
+    ]);
+
+    if(dataIdx >= 0 && descIdx >= 0 && valorIdx >= 0){
+      return {
+        headerIndex: i,
+        map: {
+          data: dataIdx,
+          descricao: descIdx,
+          valor: valorIdx
+        }
+      };
+    }
+  }
+
+  return null;
+}
+
+function findIndex(row, candidates){
+  return row.findIndex(h =>
+    candidates.some(c => h.includes(normalizeHeader(c)))
+  );
+}
+
+function normalizeHeader(v){
+  return String(v ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 /* -----> FUNÇÃO PARSE ATUALIZADA   */
 
 function parseItauRows(rows){
