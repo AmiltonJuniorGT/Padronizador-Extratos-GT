@@ -284,19 +284,34 @@ function parseItauRows(rows){
   for(let i = headerIndex + 1; i < rows.length; i++){
     const r = rows[i];
 
-    const dataRaw = getCell(r, map.data);
-    const descRaw = getCell(r, map.descricao);
-    const valorRaw = getCell(r, map.valor);
+    const dataRaw = r[0];
+    const descRaw = r[1];
+    const valorRaw = r[4];
 
     const data = parseDate(dataRaw);
     const descricao = normalizeDescription(descRaw);
     const valorOriginal = parseValue(valorRaw);
 
-    if(!data) continue;
-    if(!descricao) continue;
-    if(valorOriginal === null || valorOriginal === undefined || Number.isNaN(valorOriginal)) continue;
+    if(!data){
+    continue;
+    }
+     
+    // linhas vazias
+    if(!descricao){
+    continue;
+    }
+    
+     if(valorOriginal === null || valorOriginal === undefined || Number.isNaN(valorOriginal)) continue;
 
-    if(shouldIgnoreDescription(descricao)) continue;
+    // ignora linhas de saldo/resumo
+    if(
+    descricao.includes("SALDO") ||
+    descricao.includes("TOTAL DISPON") ||
+    descricao.includes("LIMITE") ||
+    descricao.includes("RESUMO")
+    ){
+    continue;
+    }
 
     const valor = Math.abs(valorOriginal);
 
