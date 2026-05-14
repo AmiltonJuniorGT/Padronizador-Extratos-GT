@@ -322,6 +322,7 @@ function shouldIgnoreDescription(descricao){
   return (
     d.includes("SALDO") ||
     d.includes("TOTAL DISPON") ||
+    d.includes("SALDO TOTAL DISPONÍVEL DIA") ||
     d.includes("SALDO ANTERIOR") ||
     d.includes("SALDO EM CONTA")
   );
