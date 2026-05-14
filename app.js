@@ -257,61 +257,43 @@ function parseItauRows(rows){
     throw new Error("A planilha está vazia.");
   }
 
-  const headerInfo = findHeaderRow(rows);
-
-  let headerIndex;
-  let map;
-
-  if(headerInfo){
-    headerIndex = headerInfo.headerIndex;
-    map = headerInfo.map;
-  }else{
-    // Fallback para layout informado:
-    // A = Data, B = Descrição, C = Razão Social, D = CPF/CNPJ, E = Valor, F = Saldo
-    headerIndex = -1;
-    map = {
-      data: 0,
-      descricao: 1,
-      razao: 2,
-      cnpj: 3,
-      valor: 4,
-      saldo: 5
-    };
-  }
-
   const raw = [];
 
-  for(let i = headerIndex + 1; i < rows.length; i++){
+  // Layout fixo Itaú:
+  // A = Data
+  // B = Lançamento
+  // C = Razão Social
+  // D = CPF/CNPJ
+  // E = Valor
+  // F = Saldo
+
+  for(let i = 0; i < rows.length; i++){
     const r = rows[i];
 
     const dataRaw = r[0];
     const descRaw = r[1];
     const valorRaw = r[4];
 
-    const data = parseDate(dataRaw);
     const descricao = normalizeDescription(descRaw);
+
+    // PULA linhas de saldo/resumo e CONTINUA lendo o arquivo
+    if(
+      descricao.includes("SALDO TOTAL DISPONÍVEL DIA") ||
+      descricao.includes("SALDO TOTAL DISPONIVEL DIA") ||
+      descricao.includes("SALDO EM CONTA") ||
+      descricao.includes("SALDO ANTERIOR") ||
+      descricao.includes("SALDO") ||
+      descricao.includes("TOTAL DISPON")
+    ){
+      continue;
+    }
+
+    const data = parseDate(dataRaw);
     const valorOriginal = parseValue(valorRaw);
 
-    if(!data){
-    continue;
-    }
-     
-    // linhas vazias
-    if(!descricao){
-    continue;
-    }
-    
-     if(valorOriginal === null || valorOriginal === undefined || Number.isNaN(valorOriginal)) continue;
-
-    // ignora linhas de saldo/resumo
-    if(
-    descricao.includes("SALDO") ||
-    descricao.includes("TOTAL DISPON") ||
-    descricao.includes("LIMITE") ||
-    descricao.includes("RESUMO")
-    ){
-    continue;
-    }
+    if(!data) continue;
+    if(!descricao) continue;
+    if(valorOriginal === null || valorOriginal === undefined || Number.isNaN(valorOriginal)) continue;
 
     const valor = Math.abs(valorOriginal);
 
@@ -325,13 +307,13 @@ function parseItauRows(rows){
     });
   }
 
-  const pivot = buildPivot(raw);
-  const months = getMonths(raw);
+   const pivot = buildPivot(raw);
+   const months = getMonths(raw);
 
-  return { raw, pivot, months };
-}
+   return { raw, pivot, months };
+ }
 
-function shouldIgnoreDescription(descricao){
+ function shouldIgnoreDescription(descricao){
   const d = normalizeDescription(descricao);
 
   return (
@@ -340,8 +322,8 @@ function shouldIgnoreDescription(descricao){
     d.includes("SALDO TOTAL DISPONÍVEL DIA") ||
     d.includes("SALDO ANTERIOR") ||
     d.includes("SALDO EM CONTA")
-  );
-}
+   );
+ }
 
 /* =========================================================
    DETECÇÃO DE CABEÇALHO
